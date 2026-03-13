@@ -43,6 +43,7 @@ def update_feed():
     meta_df['price'] = df['suppliedPrice'].astype(str) + " GBP"
     
     meta_df['state_of_vehicle'] = 'USED'
+    meta_df['availability'] = 'AVAILABLE'
     
     meta_df['mileage.value'] = df['odometerReadingMiles']
     meta_df['mileage.unit'] = 'MI'
