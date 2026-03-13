@@ -25,12 +25,12 @@ def update_feed():
     meta_df['image'] = clean_image 
     
     # --- NEW ADDRESS FIX ---
-    # Give Meta the exact individual columns it is asking for
-    meta_df['address.street_address'] = '177 Leicester Road'
-    meta_df['address.city'] = 'Mountsorrel'
-    meta_df['address.region'] = 'Leicestershire'
-    meta_df['address.postal_code'] = 'LE12 7DB'
-    meta_df['address.country'] = 'GB'
+    # Give Meta the exact individual columns without the 'address.' prefix
+    meta_df['street_address'] = '177 Leicester Road'
+    meta_df['city'] = 'Mountsorrel'
+    meta_df['region'] = 'Leicestershire'
+    meta_df['postal_code'] = 'LE12 7DB'
+    meta_df['country'] = 'GB'
     # -----------------------
 
     meta_df['make'] = df['make']
