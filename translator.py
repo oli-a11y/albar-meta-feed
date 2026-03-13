@@ -14,30 +14,39 @@ def update_feed():
     # 2. Create a new dataframe specifically formatted for Meta
     meta_df = pd.DataFrame()
 
-    # Map exactly to Meta's required column names
-    meta_df['id'] = df['registration']
+    # --- THE FIXES ARE HERE ---
+    # Name it exactly 'vehicle_id' so Meta auto-detects it
+    meta_df['vehicle_id'] = df['registration']
+    
     meta_df['title'] = df['derivative']
     meta_df['description'] = df['derivative']
     meta_df['url'] = df['url']
     
-    # Clean the images: Split by '|' and take only the first image link
-    meta_df['image_url'] = df['photos'].apply(lambda x: str(x).split('|')[0] if pd.notnull(x) else '')
+    # Clean the images and provide both names Meta might ask for
+    clean_image = df['photos'].apply(lambda x: str(x).split('|')[0] if pd.notnull(x) else '')
+    meta_df['image_url'] = clean_image
+    meta_df['image'] = clean_image 
     
+    # Inject the exact JSON address into every single row
+    address_json = '{"street_address": "177 Leicester Road", "city": "Mountsorrel", "region": "Leicestershire", "postal_code": "LE12 7DB", "country": "GB"}'
+    meta_df['address'] = address_json
+    # --------------------------
+
     meta_df['make'] = df['make']
     meta_df['model'] = df['model']
     meta_df['year'] = df['yearOfManufacture']
     
-    # Clean the price: Meta prefers the currency code attached
+    # Clean the price
     meta_df['price'] = df['suppliedPrice'].astype(str) + " GBP"
     
-    # Clean condition: Meta requires lowercase 'used'
+    # Clean condition
     meta_df['state_of_vehicle'] = df['ownershipCondition'].str.lower()
     
     # Mileage
     meta_df['mileage.value'] = df['odometerReadingMiles']
     meta_df['mileage.unit'] = 'mi'
     
-    # Highly recommended extra fields
+    # Recommended extra fields
     meta_df['transmission'] = df['transmissionType']
     meta_df['body_style'] = df['bodyType']
     meta_df['fuel_type'] = df['fuelType']
