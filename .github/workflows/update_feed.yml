@@ -30,7 +30,7 @@ jobs:
       run: |
         git config --global user.name 'GitHub Action Bot'
         git config --global user.email 'action@github.com'
-        git add meta_feed.csv
+        git add facebook_inventory.csv
         # Only commit if there are changes
         git diff --quiet && git diff --staged --quiet || git commit -m "Auto-update Meta feed"
         git push
