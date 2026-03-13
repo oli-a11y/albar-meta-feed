@@ -14,25 +14,22 @@ def update_feed():
 
     meta_df['vehicle_id'] = df['registration']
     
-    # --- THE CLEAN TITLE FIX ---
-    # Combines Year, Make, Model, and Trim for a beautiful, punchy ad headline
+    # --- NEW AD FIXES: Reg & Facebook Page ID ---
+    meta_df['vehicle_registration_plate'] = df['registration']
+    meta_df['fb_page_id'] = '467782659760947' 
+    # --------------------------------------------
+    
+    # The Clean Title Fix
     clean_title = df['yearOfManufacture'].astype(str) + ' ' + df['make'] + ' ' + df['model'] + ' ' + df['trim'].fillna('')
-    # This strips out any accidental double spaces if a trim is missing
     meta_df['title'] = clean_title.str.replace('  ', ' ').str.strip()
-    
-    # We move the long, detailed derivative here so the buyer can still read the specs!
     meta_df['description'] = df['derivative']
-    # ---------------------------
-    
     meta_df['url'] = df['url']
     
-    # --- THE MULTIPLE IMAGES FIX ---
-    # Meta allows an array of images. This loops through and grabs the first 10 photos!
+    # The Multiple Images Fix
     for i in range(10):
         meta_df[f'image[{i}].url'] = df['photos'].apply(
             lambda x: str(x).split('|')[i].replace('{resize}', 'w1024') if pd.notnull(x) and len(str(x).split('|')) > i else ''
         )
-    # -------------------------------
     
     meta_df['address.addr1'] = '177 Leicester Road'
     meta_df['address.city'] = 'Mountsorrel'
@@ -73,9 +70,9 @@ def update_feed():
     meta_df['body_style'] = df['bodyType']
     meta_df['exterior_color'] = df['colour']
 
-    # Save the file (keeping the same filename so Meta auto-updates)
+    # Save the file
     meta_df.to_csv('facebook_inventory.csv', index=False)
-    print("Feed successfully translated with multiple images and clean titles!")
+    print("Feed successfully translated with Reg Plate and actual FB Page ID!")
 
 if __name__ == "__main__":
     update_feed()
