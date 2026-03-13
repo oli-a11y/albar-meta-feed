@@ -3,15 +3,13 @@ import requests
 from io import StringIO
 
 def update_feed():
-    # 1. Fetch the original CSV from your website
+    # Fetch the original CSV
     url = "https://albarautos.co.uk/aia-feed/6181bf0c-0565-483d-8d47-decff1d423cd.csv"
     headers = {'User-Agent': 'Mozilla/5.0'}
     response = requests.get(url, headers=headers)
-    
-    # Read the CSV into a pandas dataframe
     df = pd.read_csv(StringIO(response.text))
 
-    # 2. Create a new dataframe specifically formatted for Meta
+    # Create the ultimate Meta dataframe
     meta_df = pd.DataFrame()
 
     meta_df['vehicle_id'] = df['registration']
@@ -19,42 +17,40 @@ def update_feed():
     meta_df['description'] = df['derivative']
     meta_df['url'] = df['url']
     
-    # Clean the images
-    clean_image = df['photos'].apply(lambda x: str(x).split('|')[0] if pd.notnull(x) else '')
-    meta_df['image_url'] = clean_image
-    meta_df['image'] = clean_image 
+    # Clean images
+    meta_df['image_url'] = df['photos'].apply(lambda x: str(x).split('|')[0] if pd.notnull(x) else '')
     
-    # --- NEW ADDRESS FIX ---
-    # Give Meta the exact individual columns without the 'address.' prefix
+    # --- THE ULTIMATE ADDRESS FIX ---
+    # We give Meta the JSON it asked for AND the flat columns the bot requires
+    meta_df['address'] = '{"street_address": "177 Leicester Road", "city": "Mountsorrel", "region": "Leicestershire", "postal_code": "LE12 7DB", "country": "GB"}'
     meta_df['street_address'] = '177 Leicester Road'
     meta_df['city'] = 'Mountsorrel'
     meta_df['region'] = 'Leicestershire'
     meta_df['postal_code'] = 'LE12 7DB'
     meta_df['country'] = 'GB'
-    # -----------------------
+    # --------------------------------
 
     meta_df['make'] = df['make']
     meta_df['model'] = df['model']
     meta_df['year'] = df['yearOfManufacture']
-    
-    # Clean the price
     meta_df['price'] = df['suppliedPrice'].astype(str) + " GBP"
     
-    # Clean condition
-    meta_df['state_of_vehicle'] = df['ownershipCondition'].str.lower()
+    # Give Meta both condition columns just to be safe
+    meta_df['state_of_vehicle'] = 'used'
+    meta_df['condition'] = 'used'
     
-    # Mileage
+    # --- THE MILEAGE FIX ---
     meta_df['mileage.value'] = df['odometerReadingMiles']
-    meta_df['mileage.unit'] = 'mi'
+    meta_df['mileage.unit'] = 'miles' 
+    # -----------------------
     
-    # Recommended extra fields
     meta_df['transmission'] = df['transmissionType']
     meta_df['body_style'] = df['bodyType']
     meta_df['fuel_type'] = df['fuelType']
     meta_df['exterior_color'] = df['colour']
     meta_df['drivetrain'] = df['drivetrain']
 
-    # 3. Save the translated file
+    # Save the file
     meta_df.to_csv('meta_feed.csv', index=False)
     print("Feed successfully translated and saved as meta_feed.csv")
 
