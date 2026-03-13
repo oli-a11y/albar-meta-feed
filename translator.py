@@ -9,7 +9,7 @@ def update_feed():
     response = requests.get(url, headers=headers)
     df = pd.read_csv(StringIO(response.text))
 
-    # Create the ultimate Meta dataframe
+    # Create the ultimate Meta dataframe using the exact AIA Template columns
     meta_df = pd.DataFrame()
 
     meta_df['vehicle_id'] = df['registration']
@@ -17,31 +17,34 @@ def update_feed():
     meta_df['description'] = df['derivative']
     meta_df['url'] = df['url']
     
-    # Image Fix (Providing both names so Meta never asks you to map it again)
-    clean_image = df['photos'].apply(lambda x: str(x).split('|')[0].replace('{resize}', 'w1024') if pd.notnull(x) else '')
-    meta_df['image'] = clean_image
-    meta_df['image_url'] = clean_image
+    # --- EXACT TEMPLATE MATCHES ---
+    # Image must be an array format
+    meta_df['image[0].url'] = df['photos'].apply(lambda x: str(x).split('|')[0].replace('{resize}', 'w1024') if pd.notnull(x) else '')
     
-    # The Address Fix (Using Meta's exact backend prefixes to bypass the UI mapper)
-    meta_df['address.street_address'] = '177 Leicester Road'
+    # Address must use .addr1
+    meta_df['address.addr1'] = '177 Leicester Road'
     meta_df['address.city'] = 'Mountsorrel'
     meta_df['address.region'] = 'Leicestershire'
     meta_df['address.postal_code'] = 'LE12 7DB'
     meta_df['address.country'] = 'GB'
+    
+    # Mileage needs .unit and .value separated again, using 'MI' for miles
+    meta_df['mileage.value'] = df['odometerReadingMiles']
+    meta_df['mileage.unit'] = 'MI'
+    # ------------------------------
 
     meta_df['make'] = df['make']
     meta_df['model'] = df['model']
     meta_df['year'] = df['yearOfManufacture']
     meta_df['price'] = df['suppliedPrice'].astype(str) + " GBP"
-    meta_df['state_of_vehicle'] = 'used'
-    meta_df['mileage'] = df['odometerReadingMiles'].astype(str) + ' mi'
     
-    # --- THE NEW DICTIONARY TRANSLATORS ---
-    # Translate Transmissions
-    transmission_map = {'Automatic': 'AUTO', 'Manual': 'MANUAL'}
+    # Template requires 'USED' in all caps
+    meta_df['state_of_vehicle'] = 'USED'
+    
+    # Translators to match the template dictionary exactly
+    transmission_map = {'Automatic': 'AUTOMATIC', 'Manual': 'MANUAL'}
     meta_df['transmission'] = df['transmissionType'].map(transmission_map).fillna(df['transmissionType'])
     
-    # Translate Fuel Types
     fuel_map = {
         'Petrol': 'PETROL', 
         'Electric': 'ELECTRIC', 
@@ -51,7 +54,6 @@ def update_feed():
     }
     meta_df['fuel_type'] = df['fuelType'].map(fuel_map).fillna(df['fuelType'])
 
-    # Translate Drivetrains
     drivetrain_map = {
         'Front Wheel Drive': 'FWD', 
         'Four Wheel Drive': '4X4',
@@ -59,14 +61,13 @@ def update_feed():
         'Rear Wheel Drive': 'RWD'
     }
     meta_df['drivetrain'] = df['drivetrain'].map(drivetrain_map).fillna(df['drivetrain'])
-    # --------------------------------------
 
     meta_df['body_style'] = df['bodyType']
     meta_df['exterior_color'] = df['colour']
 
     # Save the file
     meta_df.to_csv('meta_feed.csv', index=False)
-    print("Feed successfully translated and saved as meta_feed.csv")
+    print("Feed successfully translated to AIA template and saved as meta_feed.csv")
 
 if __name__ == "__main__":
     update_feed()
