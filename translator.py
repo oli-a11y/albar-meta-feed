@@ -17,34 +17,52 @@ def update_feed():
     meta_df['description'] = df['derivative']
     meta_df['url'] = df['url']
     
-    # --- THE IMAGE URL FIX ---
-    # This splits the pipe, grabs the first image, and replaces {resize} with a real dimension
-    meta_df['image_url'] = df['photos'].apply(lambda x: str(x).split('|')[0].replace('{resize}', 'w1024') if pd.notnull(x) else '')
-    # -------------------------
+    # Image Fix (Providing both names so Meta never asks you to map it again)
+    clean_image = df['photos'].apply(lambda x: str(x).split('|')[0].replace('{resize}', 'w1024') if pd.notnull(x) else '')
+    meta_df['image'] = clean_image
+    meta_df['image_url'] = clean_image
     
-    # The Address Fix
-    meta_df['address'] = '{"street_address": "177 Leicester Road", "city": "Mountsorrel", "region": "Leicestershire", "postal_code": "LE12 7DB", "country": "GB"}'
-    meta_df['street_address'] = '177 Leicester Road'
-    meta_df['city'] = 'Mountsorrel'
-    meta_df['region'] = 'Leicestershire'
-    meta_df['postal_code'] = 'LE12 7DB'
-    meta_df['country'] = 'GB'
+    # The Address Fix (Using Meta's exact backend prefixes to bypass the UI mapper)
+    meta_df['address.street_address'] = '177 Leicester Road'
+    meta_df['address.city'] = 'Mountsorrel'
+    meta_df['address.region'] = 'Leicestershire'
+    meta_df['address.postal_code'] = 'LE12 7DB'
+    meta_df['address.country'] = 'GB'
 
     meta_df['make'] = df['make']
     meta_df['model'] = df['model']
     meta_df['year'] = df['yearOfManufacture']
     meta_df['price'] = df['suppliedPrice'].astype(str) + " GBP"
-    
     meta_df['state_of_vehicle'] = 'used'
-    
-    # The Mileage Fix
     meta_df['mileage'] = df['odometerReadingMiles'].astype(str) + ' mi'
     
-    meta_df['transmission'] = df['transmissionType']
+    # --- THE NEW DICTIONARY TRANSLATORS ---
+    # Translate Transmissions
+    transmission_map = {'Automatic': 'AUTO', 'Manual': 'MANUAL'}
+    meta_df['transmission'] = df['transmissionType'].map(transmission_map).fillna(df['transmissionType'])
+    
+    # Translate Fuel Types
+    fuel_map = {
+        'Petrol': 'PETROL', 
+        'Electric': 'ELECTRIC', 
+        'Diesel': 'DIESEL', 
+        'Petrol Hybrid': 'HYBRID', 
+        'Petrol Plug-in Hybrid': 'PLUGIN_HYBRID'
+    }
+    meta_df['fuel_type'] = df['fuelType'].map(fuel_map).fillna(df['fuelType'])
+
+    # Translate Drivetrains
+    drivetrain_map = {
+        'Front Wheel Drive': 'FWD', 
+        'Four Wheel Drive': '4X4',
+        'All Wheel Drive': 'AWD',
+        'Rear Wheel Drive': 'RWD'
+    }
+    meta_df['drivetrain'] = df['drivetrain'].map(drivetrain_map).fillna(df['drivetrain'])
+    # --------------------------------------
+
     meta_df['body_style'] = df['bodyType']
-    meta_df['fuel_type'] = df['fuelType']
     meta_df['exterior_color'] = df['colour']
-    meta_df['drivetrain'] = df['drivetrain']
 
     # Save the file
     meta_df.to_csv('meta_feed.csv', index=False)
