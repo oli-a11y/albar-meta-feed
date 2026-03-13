@@ -14,23 +14,24 @@ def update_feed():
     # 2. Create a new dataframe specifically formatted for Meta
     meta_df = pd.DataFrame()
 
-    # --- THE FIXES ARE HERE ---
-    # Name it exactly 'vehicle_id' so Meta auto-detects it
     meta_df['vehicle_id'] = df['registration']
-    
     meta_df['title'] = df['derivative']
     meta_df['description'] = df['derivative']
     meta_df['url'] = df['url']
     
-    # Clean the images and provide both names Meta might ask for
+    # Clean the images
     clean_image = df['photos'].apply(lambda x: str(x).split('|')[0] if pd.notnull(x) else '')
     meta_df['image_url'] = clean_image
     meta_df['image'] = clean_image 
     
-    # Inject the exact JSON address into every single row
-    address_json = '{"street_address": "177 Leicester Road", "city": "Mountsorrel", "region": "Leicestershire", "postal_code": "LE12 7DB", "country": "GB"}'
-    meta_df['address'] = address_json
-    # --------------------------
+    # --- NEW ADDRESS FIX ---
+    # Give Meta the exact individual columns it is asking for
+    meta_df['address.street_address'] = '177 Leicester Road'
+    meta_df['address.city'] = 'Mountsorrel'
+    meta_df['address.region'] = 'Leicestershire'
+    meta_df['address.postal_code'] = 'LE12 7DB'
+    meta_df['address.country'] = 'GB'
+    # -----------------------
 
     meta_df['make'] = df['make']
     meta_df['model'] = df['model']
