@@ -9,39 +9,47 @@ def update_feed():
     response = requests.get(url, headers=headers)
     df = pd.read_csv(StringIO(response.text))
 
-    # Create the ultimate Meta dataframe using the exact AIA Template columns
+    # Create the ultimate Meta dataframe
     meta_df = pd.DataFrame()
 
     meta_df['vehicle_id'] = df['registration']
-    meta_df['title'] = df['derivative']
+    
+    # --- THE CLEAN TITLE FIX ---
+    # Combines Year, Make, Model, and Trim for a beautiful, punchy ad headline
+    clean_title = df['yearOfManufacture'].astype(str) + ' ' + df['make'] + ' ' + df['model'] + ' ' + df['trim'].fillna('')
+    # This strips out any accidental double spaces if a trim is missing
+    meta_df['title'] = clean_title.str.replace('  ', ' ').str.strip()
+    
+    # We move the long, detailed derivative here so the buyer can still read the specs!
     meta_df['description'] = df['derivative']
+    # ---------------------------
+    
     meta_df['url'] = df['url']
     
-    # --- EXACT TEMPLATE MATCHES ---
-    # Image must be an array format
-    meta_df['image[0].url'] = df['photos'].apply(lambda x: str(x).split('|')[0].replace('{resize}', 'w1024') if pd.notnull(x) else '')
+    # --- THE MULTIPLE IMAGES FIX ---
+    # Meta allows an array of images. This loops through and grabs the first 10 photos!
+    for i in range(10):
+        meta_df[f'image[{i}].url'] = df['photos'].apply(
+            lambda x: str(x).split('|')[i].replace('{resize}', 'w1024') if pd.notnull(x) and len(str(x).split('|')) > i else ''
+        )
+    # -------------------------------
     
-    # Address must use .addr1
     meta_df['address.addr1'] = '177 Leicester Road'
     meta_df['address.city'] = 'Mountsorrel'
     meta_df['address.region'] = 'Leicestershire'
     meta_df['address.postal_code'] = 'LE12 7DB'
     meta_df['address.country'] = 'GB'
-    
-    # Mileage needs .unit and .value separated again, using 'MI' for miles
-    meta_df['mileage.value'] = df['odometerReadingMiles']
-    meta_df['mileage.unit'] = 'MI'
-    # ------------------------------
 
     meta_df['make'] = df['make']
     meta_df['model'] = df['model']
     meta_df['year'] = df['yearOfManufacture']
     meta_df['price'] = df['suppliedPrice'].astype(str) + " GBP"
     
-    # Template requires 'USED' in all caps
     meta_df['state_of_vehicle'] = 'USED'
     
-    # Translators to match the template dictionary exactly
+    meta_df['mileage.value'] = df['odometerReadingMiles']
+    meta_df['mileage.unit'] = 'MI'
+    
     transmission_map = {'Automatic': 'AUTOMATIC', 'Manual': 'MANUAL'}
     meta_df['transmission'] = df['transmissionType'].map(transmission_map).fillna(df['transmissionType'])
     
@@ -65,9 +73,9 @@ def update_feed():
     meta_df['body_style'] = df['bodyType']
     meta_df['exterior_color'] = df['colour']
 
-    # Save the file
+    # Save the file (keeping the same filename so Meta auto-updates)
     meta_df.to_csv('facebook_inventory.csv', index=False)
-    print("Feed successfully translated to AIA template and saved as meta_feed.csv")
+    print("Feed successfully translated with multiple images and clean titles!")
 
 if __name__ == "__main__":
     update_feed()
