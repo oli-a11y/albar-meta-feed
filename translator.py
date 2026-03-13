@@ -66,7 +66,7 @@ def update_feed():
     meta_df['exterior_color'] = df['colour']
 
     # Save the file
-    meta_df.to_csv('meta_feed.csv', index=False)
+    meta_df.to_csv('facebook_inventory.csv', index=False)
     print("Feed successfully translated to AIA template and saved as meta_feed.csv")
 
 if __name__ == "__main__":
