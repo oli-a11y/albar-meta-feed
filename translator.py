@@ -17,10 +17,12 @@ def update_feed():
     meta_df['description'] = df['derivative']
     meta_df['url'] = df['url']
     
-    # Clean images
-    meta_df['image_url'] = df['photos'].apply(lambda x: str(x).split('|')[0] if pd.notnull(x) else '')
+    # --- THE IMAGE URL FIX ---
+    # This splits the pipe, grabs the first image, and replaces {resize} with a real dimension
+    meta_df['image_url'] = df['photos'].apply(lambda x: str(x).split('|')[0].replace('{resize}', 'w1024') if pd.notnull(x) else '')
+    # -------------------------
     
-    # The Address Fix (Keeping both flat and JSON to keep Meta happy)
+    # The Address Fix
     meta_df['address'] = '{"street_address": "177 Leicester Road", "city": "Mountsorrel", "region": "Leicestershire", "postal_code": "LE12 7DB", "country": "GB"}'
     meta_df['street_address'] = '177 Leicester Road'
     meta_df['city'] = 'Mountsorrel'
@@ -33,13 +35,10 @@ def update_feed():
     meta_df['year'] = df['yearOfManufacture']
     meta_df['price'] = df['suppliedPrice'].astype(str) + " GBP"
     
-    # Clean Condition
     meta_df['state_of_vehicle'] = 'used'
     
-    # --- THE NEW MILEAGE FIX ---
-    # Combining it into a single string (e.g., "53000 mi") bypasses the strict unit validation
+    # The Mileage Fix
     meta_df['mileage'] = df['odometerReadingMiles'].astype(str) + ' mi'
-    # ---------------------------
     
     meta_df['transmission'] = df['transmissionType']
     meta_df['body_style'] = df['bodyType']
